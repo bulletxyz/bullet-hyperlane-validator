@@ -20,8 +20,10 @@ from pathlib import Path
 
 root, module, example = map(Path, sys.argv[1:])
 source = re.search(r"```hcl\n(.*?)\n```", (root / "README.md").read_text(), re.S)[1]
-source = source.replace(
-    '"github.com/bulletxyz/bullet-hyperlane-validator?ref=v0.2.0"', json.dumps(str(module))
+source = re.sub(
+    r'"github.com/bulletxyz/bullet-hyperlane-validator\?ref=v[^"]+"',
+    lambda _: json.dumps(str(module)),
+    source,
 )
 (example / "main.tf").write_text(source + "\n")
 PY

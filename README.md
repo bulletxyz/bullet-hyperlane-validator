@@ -2,9 +2,9 @@
 
 Run a Hyperlane checkpoint validator for Bullet mainnet with Terraform or
 OpenTofu. The module launches a sealed, attestable EC2 instance that generates
-its own validator key inside its NitroTPM. No private key or SSH access is
-required. The validator follows Bullet's message tree, signs checkpoints, and
-publishes them to S3 for relayers.
+its validator key in RAM and seals it into its NitroTPM. No private key or SSH
+access is required. The validator follows Bullet's message tree, signs
+checkpoints, and publishes them to S3 for relayers.
 
 ## Deploy
 
@@ -115,9 +115,9 @@ resource "aws_s3_bucket_policy" "validator" {
 }
 
 module "validator" {
-  source = "github.com/bulletxyz/bullet-hyperlane-validator?ref=v0.2.0"
+  source = "github.com/bulletxyz/bullet-hyperlane-validator?ref=v0.2.1"
 
-  versions  = ["0.2.0"]
+  versions  = ["0.2.1"]
   bucket    = aws_s3_bucket.validator.id
   prefix    = local.prefix
   subnet_id = aws_subnet.validator.id
@@ -147,7 +147,8 @@ applicable level. The example changes only this bucket's settings. Keep
 SSE-S3 encryption (the default); anonymous readers cannot read SSE-KMS objects.
 The validator reads anonymously even when signing. Missing public
 `s3:ListBucket` permission makes S3 return 403 for missing objects and prevents
-startup. Only the instance role may write under the configured prefix.
+startup. The module grants the instance role `s3:PutObject` access under the
+configured prefix.
 
 To use existing infrastructure, keep the provider and module blocks and pass
 your bucket name and subnet ID. The bucket must be in the provider's region
@@ -160,9 +161,9 @@ A bucket in another account must also grant the module's `role_arn`
 
 | Pin | Current value | Meaning |
 | --- | --- | --- |
-| Module source `ref` | `v0.2.0` | Immutable Git tag containing this module and AMI build. |
-| `versions` | `["0.2.0"]` | AMI releases to run, one instance and key per release. |
-| AMI name | `hyperlane-bullet-validator-0.2.0` | Looked up automatically; owner `010222938823` (Bullet). |
+| Module source `ref` | `v0.2.1` | Immutable Git tag containing this module and AMI build. |
+| `versions` | `["0.2.1"]` | AMI releases to run, one instance and key per release. |
+| AMI name | `hyperlane-bullet-validator-0.2.1` | Looked up automatically; owner `010222938823` (Bullet). |
 | Regions | `ap-northeast-1`, `eu-north-1`, `eu-west-1` | Tokyo, Stockholm, Dublin; module and bucket use the same region. |
 
 [Releases](https://github.com/bulletxyz/bullet-hyperlane-validator/releases)
@@ -231,7 +232,7 @@ checkout of the release tag:
 ```sh
 jj git clone --colocate https://github.com/bulletxyz/bullet-hyperlane-validator
 cd bullet-hyperlane-validator
-jj new v0.2.0
+jj new v0.2.1
 curl --fail --output attestation.cbor \
   https://YOUR_BUCKET.s3.YOUR_REGION.amazonaws.com/bulletmainnet/YOUR_ADDRESS/attestation.cbor
 nix run 'path:.?dir=ami#verify' -- attestation.cbor
