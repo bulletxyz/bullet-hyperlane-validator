@@ -115,9 +115,9 @@ resource "aws_s3_bucket_policy" "validator" {
 }
 
 module "validator" {
-  source = "github.com/bulletxyz/bullet-hyperlane-validator?ref=v0.2.1"
+  source = "github.com/bulletxyz/bullet-hyperlane-validator?ref=v0.2.2"
 
-  versions  = ["0.2.1"]
+  versions  = ["0.2.2"]
   bucket    = aws_s3_bucket.validator.id
   prefix    = local.prefix
   subnet_id = aws_subnet.validator.id
@@ -161,9 +161,9 @@ A bucket in another account must also grant the module's `role_arn`
 
 | Pin | Current value | Meaning |
 | --- | --- | --- |
-| Module source `ref` | `v0.2.1` | Immutable Git tag containing this module and AMI build. |
-| `versions` | `["0.2.1"]` | AMI releases to run, one instance and key per release. |
-| AMI name | `hyperlane-bullet-validator-0.2.1` | Looked up automatically; owner `010222938823` (Bullet). |
+| Module source `ref` | `v0.2.2` | Immutable Git tag containing this module and AMI build. |
+| `versions` | `["0.2.2"]` | AMI releases to run, one instance and key per release. |
+| AMI name | `hyperlane-bullet-validator-0.2.2` | Looked up automatically; owner `010222938823` (Bullet). |
 | Regions | `ap-northeast-1`, `eu-north-1`, `eu-west-1` | Tokyo, Stockholm, Dublin; module and bucket use the same region. |
 
 [Releases](https://github.com/bulletxyz/bullet-hyperlane-validator/releases)
@@ -232,7 +232,7 @@ checkout of the release tag:
 ```sh
 jj git clone --colocate https://github.com/bulletxyz/bullet-hyperlane-validator
 cd bullet-hyperlane-validator
-jj new v0.2.1
+jj new v0.2.2
 curl --fail --output attestation.cbor \
   https://YOUR_BUCKET.s3.YOUR_REGION.amazonaws.com/bulletmainnet/YOUR_ADDRESS/attestation.cbor
 nix run 'path:.?dir=ami#verify' -- attestation.cbor

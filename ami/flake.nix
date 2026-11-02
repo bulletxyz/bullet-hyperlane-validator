@@ -34,12 +34,21 @@
       pcrs = "sha384:4,12";
 
       validator =
-        { pkgs, ... }:
+        { config, pkgs, ... }:
         {
           system.stateVersion = "26.05";
+          # The pinned libblkid cannot probe checksummed EROFS with 512-byte blocks.
+          image.repart.partitions.${config.image.repart.verityStore.partitionIds.store}.repartConfig.FileSystemSectorSize =
+            4096;
           # The serial console, read with `aws ec2 get-console-output`, is the
           # only window into the box.
           services.journald.console = "/dev/ttyS0";
+
+          boot.initrd.systemd.contents."/etc/systemd/journald.conf".text = ''
+            [Journal]
+            ForwardToConsole=yes
+            TTYPath=/dev/ttyS0
+          '';
 
           systemd.services.validator-key = {
             wants = [ "network-online.target" ];
@@ -122,6 +131,22 @@
     in
     {
       packages.${system}.default = image;
+
+      checks.${system}.store-filesystem =
+        pkgs.runCommand "store-filesystem"
+          {
+            nativeBuildInputs = [
+              pkgs.util-linux
+              pkgs.jq
+            ];
+          }
+          ''
+            for raw in ${image}/*.raw; do
+              offset=$(sfdisk --json "$raw" | jq -er '.partitiontable | .sectorsize * (.partitions[] | select(.name == "store") | .start)')
+              test "$(blkid -p -O "$offset" -s TYPE -o value "$raw")" = erofs
+            done
+            touch "$out"
+          '';
 
       apps.${system} = {
         # `publish-ami <version>` registers the image as the public AMI
